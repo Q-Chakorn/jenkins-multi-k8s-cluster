@@ -1,0 +1,15 @@
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: jenkins-home-pv
+  labels:
+    app: jenkins
+    storage: jenkins-q
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes:
+  - ReadWriteOnce
+  hostPath:
+    path: /jenkins-data/jenkins-Q-home

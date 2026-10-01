@@ -1,0 +1,12 @@
+---
+kind: Endpoints
+apiVersion: v1
+metadata:
+  name: jenkins-slave-agent
+  namespace: jenkins-q
+subsets:
+- addresses:
+    - ip: ${JENKINS_SLAVE_IP} # ใส่ ip ของ Jenkins Slave Agent
+    - ip: ${JENKINS_SLAVE_IP2}
+  ports:
+    - port: 6443

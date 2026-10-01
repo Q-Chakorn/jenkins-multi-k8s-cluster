@@ -1,0 +1,33 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: jenkins
+  name: jenkins-web
+  namespace: jenkins-q
+spec:
+  selector:
+    app: jenkins
+  ports:
+  - port: 80
+    targetPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: jenkins
+  name: jenkins-jnlp
+  namespace: jenkins-q
+spec:
+  type: NodePort
+  externalTrafficPolicy: Local
+  selector:
+    app: jenkins
+  ports:
+  - name: jnlp
+    protocol: TCP
+    nodePort: 30001
+    port: 50000
+    targetPort: 50000

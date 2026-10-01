@@ -1,0 +1,109 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: jenkins
+  name: jenkins
+  namespace: jenkins-q
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jenkins
+  template:
+    metadata:
+      labels:
+        app: jenkins
+    spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        runAsNonRoot: true
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      initContainers:
+      - name: init-jenkins
+        image: jenkins/jenkins:2.479.3-lts-jdk17
+        imagePullPolicy: IfNotPresent
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        command: [ "sh", "/var/jenkins_config/apply_config.sh" ]
+        env:
+          - name: JENKINS_UC
+            value: "https://updates.jenkins.io"
+        resources:
+          requests:
+            memory: "64M"
+            cpu: "250m"
+          limits:
+            memory: "2G"
+            cpu: "500m"
+        volumeMounts:
+          - mountPath: /tmp
+            name: tmp
+          - mountPath: /var/jenkins_config
+            name: jenkins-config
+          - mountPath: /var/jenkins_home
+            name: jenkins-home
+          - mountPath: /usr/share/jenkins/ref/init.groovy.d/
+            name: init-dir
+            readOnly: false
+          - mountPath: /var/jenkins_plugins
+            name: plugin-dir
+      containers:
+      - name: jenkins
+        image: jenkins/jenkins:2.479.3-lts-jdk17
+        imagePullPolicy: IfNotPresent
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        env:
+          - name: JAVA_OPTS
+            value: -Djenkins.install.runSetupWizard=false -Duser.timezone=Asia/Bangkok
+          - name: JENKINS_OPTS
+            value: "--prefix=/chakorn/jenkins"
+        resources:
+          requests:
+            memory: "64M"
+            cpu: "250m"
+          limits:
+            memory: "2G"
+            cpu: "500m"
+        ports:
+        - name: http-port
+          containerPort: 8080
+        - name: jnlp-port
+          containerPort: 50000
+        volumeMounts:
+          - mountPath: /var/jenkins_home
+            name: jenkins-home
+            readOnly: false
+          - mountPath: /usr/share/jenkins/ref/init.groovy.d/
+            name: init-dir
+            readOnly: false
+          - mountPath: /usr/share/jenkins/ref/plugins/
+            name: plugin-dir
+            readOnly: false
+          
+      volumes:
+        - name: init-dir
+          emptyDir: {}
+        - name: jenkins-home
+          persistentVolumeClaim:
+            claimName: jenkins-home-pvc
+        - name: plugins
+          emptyDir: {}
+        - name: tmp
+          emptyDir: {}
+        - name: jenkins-config
+          configMap:
+            name: jenkins-config
+        - name: plugin-dir
+          emptyDir: {}
